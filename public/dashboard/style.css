@@ -271,19 +271,33 @@ main{max-width:1180px;width:100%;margin:0 auto;display:grid;gap:20px;overflow-x:
 .auth-card{border-radius:0;padding:clamp(28px,5vw,52px);display:grid;align-content:center;gap:12px;box-shadow:none}.auth-card h2{font-size:1.65rem}.auth-form{display:grid;gap:16px;margin-top:14px}.auth-form label{display:grid;gap:7px;font-weight:700;font-size:.88rem}.auth-form input{border:1px solid var(--muted-sand);background:#fff;border-radius:12px;padding:12px 14px;font:inherit;color:var(--charcoal)}.auth-form input:focus{outline:3px solid rgba(63,166,184,.3);border-color:var(--deep-teal)}.form-message{min-height:1.5em;color:#a8562a;font-size:.88rem}.link-button{justify-self:start;padding:0;border:0;background:none;color:var(--deep-teal);font:inherit;font-weight:700;cursor:pointer}.link-button:hover{text-decoration:underline}.setup-note{font-size:.8rem;color:var(--mountain-brown);padding:10px;border-radius:10px;background:rgba(242,184,75,.17)}
 @media(max-width:720px){.auth-shell{grid-template-columns:1fr}.auth-intro{padding:34px}.auth-card{border-radius:0 0 28px 28px}.auth-intro h1{font-size:2.2rem}}
 
-/* ---- genre / story picker ---- */
-.pick-grid{list-style:none;display:grid;gap:14px;padding:0;margin:18px 0 0;
-  grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
-.pick{width:100%;display:flex;flex-direction:column;gap:6px;align-items:flex-start;
-  padding:18px;border-radius:18px;border:1px solid rgba(140,122,94,.28);
-  background:rgba(255,255,255,.6);cursor:pointer;text-align:left;
-  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease}
-.pick:hover{transform:translateY(-3px);border-color:var(--ocean-teal);
-  box-shadow:0 12px 26px rgba(28,110,126,.16)}
-.pick:focus-visible{outline:3px solid var(--ocean-teal);outline-offset:3px}
-.pick-ico{font-size:1.7rem}
-.pick-name{font-weight:600;color:var(--charcoal)}
+/* ---- 3D genre / story book flow ---- */
+.bookflow-shell{position:relative;display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;margin-top:12px}
+.bookflow-viewport{position:relative;height:390px;min-width:0;overflow:hidden;perspective:1100px;perspective-origin:50% 44%;touch-action:pan-y;cursor:grab;outline:none}
+.bookflow-viewport.is-dragging{cursor:grabbing}
+.bookflow-track{position:absolute;inset:0;list-style:none;margin:0;padding:0;transform-style:preserve-3d}
+.bookflow-item{--flow-x:0px;--flow-z:0px;--flow-ry:0deg;--flow-scale:1;position:absolute;top:34px;left:50%;width:190px;height:286px;margin-left:-95px;transform:translate3d(var(--flow-x),0,var(--flow-z)) rotateY(var(--flow-ry)) scale(var(--flow-scale));transform-origin:center bottom;transition:transform .48s cubic-bezier(.2,.75,.2,1),opacity .35s ease,filter .35s ease;opacity:.82;filter:saturate(.72) brightness(.78);pointer-events:auto}
+.bookflow-item.is-active{transform:translate3d(var(--flow-x),-16px,38px) rotateY(0) scale(1.06);opacity:1;filter:none}
+.bookflow-item.is-far{opacity:0;pointer-events:none}
+.book-cover{position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow:hidden;padding:28px 18px 20px;border:1px solid color-mix(in srgb,var(--cover-ink) 42%,transparent);border-radius:3px 10px 10px 3px;background:linear-gradient(145deg,var(--cover-a),var(--cover-b));color:var(--cover-paper);font:inherit;text-align:center;cursor:pointer;box-shadow:-9px 10px 0 -7px var(--cover-page),0 24px 38px -16px rgba(43,43,46,.68),inset 0 0 0 2px color-mix(in srgb,var(--cover-paper) 12%,transparent);transition:box-shadow .3s ease}
+.book-cover::before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 28%,color-mix(in srgb,var(--cover-paper) 18%,transparent) 48%,transparent 64%);transform:translateX(-120%);transition:transform .75s ease}
+.bookflow-item.is-active .book-cover:hover::before{transform:translateX(120%)}
+.bookflow-item.is-active .book-cover{box-shadow:-11px 12px 0 -8px var(--cover-page),0 34px 54px -18px rgba(43,43,46,.72),0 0 0 2px color-mix(in srgb,var(--sunset-gold) 58%,transparent),inset 0 0 0 2px color-mix(in srgb,var(--cover-paper) 14%,transparent)}
+.book-spine{position:absolute;inset:0 auto 0 0;width:11px;background:linear-gradient(90deg,color-mix(in srgb,var(--cover-ink) 85%,transparent),transparent);border-right:1px solid color-mix(in srgb,var(--cover-paper) 18%,transparent)}
+.cover-kicker{position:relative;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.16em;opacity:.78}
+.cover-symbol{position:relative;width:74px;height:74px;margin:22px 0 16px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--cover-paper) 38%,transparent);border-radius:50%;font-size:2.15rem;background:color-mix(in srgb,var(--cover-ink) 18%,transparent);box-shadow:inset 0 0 22px color-mix(in srgb,var(--cover-paper) 12%,transparent)}
+.cover-title{position:relative;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-family:Georgia,serif;font-size:1.22rem;font-weight:700;line-height:1.12;text-wrap:balance}
+.cover-rule{position:relative;width:34px;height:1px;margin:13px auto 9px;background:currentColor;opacity:.55}
+.cover-meta,.cover-progress{position:relative;font-size:.7rem;font-weight:700;line-height:1.25}.cover-progress{margin-top:auto;opacity:.72;font-weight:600}
+.story-cover .cover-title{font-size:1.12rem}.story-cover .cover-symbol{width:62px;height:62px;margin:17px 0 14px;font-size:1.8rem}
+.art-expedition{--cover-a:#1d6d72;--cover-b:#143f45;--cover-ink:#082f32;--cover-paper:#fff4d6;--cover-page:#e7d9b9}.art-comic{--cover-a:#e7b83f;--cover-b:#b74832;--cover-ink:#52231d;--cover-paper:#fff8db;--cover-page:#eadcb8}.art-victory{--cover-a:#3f7d6e;--cover-b:#173e39;--cover-ink:#102d2a;--cover-paper:#fff4ce;--cover-page:#ddd0ad}.art-noir{--cover-a:#4c3541;--cover-b:#19171c;--cover-ink:#120d10;--cover-paper:#f6ded9;--cover-page:#d9cbc4}.art-mystery{--cover-a:#306170;--cover-b:#1d2938;--cover-ink:#111c27;--cover-paper:#f4e7c5;--cover-page:#d8c8a6}.art-drama{--cover-a:#b85f4e;--cover-b:#57342f;--cover-ink:#321d1a;--cover-paper:#fff1dc;--cover-page:#e4d2bc}.art-magic{--cover-a:#3b7871;--cover-b:#263c57;--cover-ink:#17253b;--cover-paper:#fff2c7;--cover-page:#dbcfaf}.art-history{--cover-a:#96713e;--cover-b:#4e3828;--cover-ink:#302015;--cover-paper:#fff0cf;--cover-page:#dbc8a8}.art-horror{--cover-a:#6a3234;--cover-b:#1d2025;--cover-ink:#101216;--cover-paper:#f6e3d1;--cover-page:#d6c6b8}.art-mind{--cover-a:#486576;--cover-b:#282a38;--cover-ink:#181a25;--cover-paper:#e9f3ec;--cover-page:#ccd6cc}.art-romance{--cover-a:#c7766c;--cover-b:#6b3f50;--cover-ink:#3d2430;--cover-paper:#fff0e8;--cover-page:#dfcbc4}.art-future{--cover-a:#287f86;--cover-b:#192d43;--cover-ink:#102033;--cover-paper:#e6f5df;--cover-page:#cad6c5}
+.bookflow-arrow{width:42px;height:42px;display:grid;place-items:center;border:1px solid var(--muted-sand);border-radius:50%;background:var(--surface);color:var(--deep-teal);font:700 1.8rem/1 Georgia,serif;cursor:pointer;z-index:120;box-shadow:var(--shadow);transition:transform .2s ease,background .2s ease}
+.bookflow-arrow:hover:not(:disabled){transform:scale(1.08);background:var(--sand-cream)}.bookflow-arrow:disabled{opacity:.3;cursor:not-allowed}
+.bookflow-footer{display:grid;justify-items:center;gap:8px;margin-top:-18px}.bookflow-status{min-height:1.4em;color:var(--deep-teal);font-size:.82rem;font-weight:700}.bookflow-dots{display:flex;gap:5px}.bookflow-dots i{width:5px;height:5px;border-radius:50%;background:var(--muted-sand);transition:width .25s ease,background .25s ease}.bookflow-dots i.active{width:17px;border-radius:99px;background:var(--deep-teal)}
+.picker-actions{align-items:center}.picker-actions #flowChoose{margin-left:auto}
 .done-card .mix{margin-top:16px}
+
+@media(max-width:640px){.bookflow-shell{grid-template-columns:34px minmax(0,1fr) 34px}.bookflow-viewport{height:334px;perspective:850px}.bookflow-item{top:28px;width:154px;height:238px;margin-left:-77px}.book-cover{padding:22px 14px 16px}.cover-symbol{width:58px;height:58px;margin:14px 0 12px;font-size:1.7rem}.cover-title{font-size:1rem}.cover-kicker{font-size:.54rem}.bookflow-arrow{width:32px;height:32px;font-size:1.4rem}.bookflow-footer{margin-top:-22px}.picker-actions{flex-wrap:wrap}.picker-actions .btn{flex:1 1 140px;text-align:center}.picker-actions #flowChoose{margin-left:0}.pick-header-flex{display:grid;grid-template-columns:minmax(0,1fr) auto}.user-prog-pill{max-width:150px;text-align:right}}
 
 /* ---------- User Session Manager Bar ---------- */
 .user-session-bar{

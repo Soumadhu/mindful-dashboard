@@ -105,6 +105,18 @@ let currentSetNumber = 1;
 let questions = [];
 let answers = [];
 let index = 0;
+let flowItems = [];
+let flowIndex = 0;
+let flowMode = "genres";
+let dragStartX = null;
+let dragDeltaX = 0;
+let wheelLock = false;
+
+const GENRE_ART = ["expedition", "comic", "victory", "noir", "mystery", "drama", "magic", "history", "horror", "mind", "romance", "future"];
+
+function safeText(value) {
+  return String(value ?? "").replace(/[&<>"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[char]));
+}
 
 /* ---------- Question Set Loader from stories.json ---------- */
 function buildQuestionSet(genreObj, storyObj, setNum) {
@@ -207,26 +219,33 @@ function showPickGenres() {
   $("#pickTitle").textContent = "Choose a genre";
   $("#pickHint").textContent = "Each world tells a different story about how you feel today.";
   $("#pickBack").hidden = true;
+  $("#flowChoose").textContent = "Explore this genre";
+  $("#bookflowViewport").setAttribute("aria-label", "Genre choices");
   $("#qProgressFill").style.width = "0%";
 
   const uid = getCurrentUserId();
   const prog = loadUserProgress(uid);
 
-  $("#pickGrid").innerHTML = DATA.genres.map(g => {
+  flowMode = "genres";
+  flowItems = DATA.genres;
+  flowIndex = 0;
+  $("#pickGrid").innerHTML = DATA.genres.map((g, genreIndex) => {
     const storiesInGenre = g.stories;
     const totalSetsCompleted = storiesInGenre.reduce((acc, s) => acc + (prog[s.id] || 0), 0);
     return `
-    <li>
-      <button type="button" class="pick" data-genre="${g.id}">
-        <div class="pick-top-flex">
-          <span class="pick-ico" aria-hidden="true">${g.icon}</span>
-          ${totalSetsCompleted > 0 ? `<span class="badge-tag">${totalSetsCompleted} Set(s) Done</span>` : ''}
-        </div>
-        <span class="pick-name">${g.name}</span>
-        <span class="muted small">${g.stories.length} stories available</span>
+    <li class="bookflow-item" data-index="${genreIndex}">
+      <button type="button" class="book-cover genre-cover art-${GENRE_ART[genreIndex % GENRE_ART.length]}" data-genre="${g.id}" aria-label="${safeText(g.name)}, ${g.stories.length} stories">
+        <span class="book-spine" aria-hidden="true"></span>
+        <span class="cover-kicker">Mindful stories</span>
+        <span class="cover-symbol" aria-hidden="true">${g.icon}</span>
+        <span class="cover-title">${safeText(g.name)}</span>
+        <span class="cover-rule" aria-hidden="true"></span>
+        <span class="cover-meta">${g.stories.length} stories</span>
+        ${totalSetsCompleted > 0 ? `<span class="cover-progress">${totalSetsCompleted} sets read</span>` : `<span class="cover-progress">A new world awaits</span>`}
       </button>
     </li>`;
   }).join("");
+  updateBookflow();
 }
 
 /* ---------- Modular Genre Data Loader ---------- */
@@ -260,8 +279,13 @@ async function showPickStories(g) {
   $("#pickTitle").textContent = `${fullGenre.name} — pick your story`;
   $("#pickHint").textContent = "Select a story to continue from where you left off or start Set 1.";
   $("#pickBack").hidden = false;
+  $("#flowChoose").textContent = "Begin this story";
+  $("#bookflowViewport").setAttribute("aria-label", `${fullGenre.name} story choices`);
 
-  $("#pickGrid").innerHTML = fullGenre.stories.map(s => {
+  flowMode = "stories";
+  flowItems = fullGenre.stories;
+  flowIndex = 0;
+  $("#pickGrid").innerHTML = fullGenre.stories.map((s, storyIndex) => {
     const completedSets = prog[s.id] || 0;
     const nextSet = completedSets + 1;
     const startQ = (nextSet - 1) * 6 + 1;
@@ -269,21 +293,63 @@ async function showPickStories(g) {
     const isResuming = completedSets > 0;
 
     return `
-    <li>
-      <button type="button" class="pick story-pick-card" data-story="${s.id}">
-        <div class="pick-top-flex">
-          <span class="pick-ico" aria-hidden="true">${fullGenre.icon}</span>
-          <span class="badge-tag ${isResuming ? 'badge-resume' : 'badge-new'}">
-            ${isResuming ? `Resume Set ${nextSet} (Q${startQ}–${endQ})` : `Set 1 (Q1–6)`}
-          </span>
-        </div>
-        <span class="pick-name">${s.title}</span>
-        <p class="muted small">
-          ${isResuming ? `✅ Completed Set ${completedSets} · Next up: Set ${nextSet} (Q${startQ}–${endQ})` : `Start fresh from Question 1`}
-        </p>
+    <li class="bookflow-item" data-index="${storyIndex}">
+      <button type="button" class="book-cover story-cover art-${GENRE_ART[DATA.genres.findIndex(item => item.id === fullGenre.id) % GENRE_ART.length]}" data-story="${s.id}" aria-label="${safeText(s.title)}, ${isResuming ? `resume set ${nextSet}` : "start set 1"}">
+        <span class="book-spine" aria-hidden="true"></span>
+        <span class="cover-kicker">${safeText(fullGenre.name)}</span>
+        <span class="cover-symbol" aria-hidden="true">${fullGenre.icon}</span>
+        <span class="cover-title">${safeText(s.title)}</span>
+        <span class="cover-rule" aria-hidden="true"></span>
+        <span class="cover-meta">${isResuming ? `Resume set ${nextSet}` : "Begin set 1"}</span>
+        <span class="cover-progress">Questions ${startQ}–${endQ}</span>
       </button>
     </li>`;
   }).join("");
+  updateBookflow();
+}
+
+function updateBookflow() {
+  const cards = [...document.querySelectorAll(".bookflow-item")];
+  const compact = window.matchMedia("(max-width: 640px)").matches;
+  const spacing = compact ? 74 : 112;
+  cards.forEach((card, itemIndex) => {
+    const distance = itemIndex - flowIndex;
+    const away = Math.abs(distance);
+    card.style.setProperty("--flow-x", `${distance * spacing}px`);
+    card.style.setProperty("--flow-z", `${-away * (compact ? 42 : 64)}px`);
+    card.style.setProperty("--flow-ry", `${distance === 0 ? 0 : distance < 0 ? 48 : -48}deg`);
+    card.style.setProperty("--flow-scale", String(Math.max(.72, 1 - away * .07)));
+    card.style.zIndex = String(100 - away);
+    card.classList.toggle("is-active", distance === 0);
+    card.classList.toggle("is-far", away > (compact ? 3 : 5));
+    const button = card.querySelector("button");
+    if (button) {
+      button.tabIndex = distance === 0 ? 0 : -1;
+      button.setAttribute("aria-current", distance === 0 ? "true" : "false");
+    }
+  });
+  const selected = flowItems[flowIndex];
+  const status = $("#flowStatus");
+  if (selected && status) status.textContent = `${flowIndex + 1} of ${flowItems.length} · ${selected.name || selected.title}`;
+  $("#flowPrev").disabled = flowIndex === 0;
+  $("#flowNext").disabled = flowIndex === flowItems.length - 1;
+  const maxDots = Math.min(flowItems.length, 12);
+  $("#flowDots").innerHTML = Array.from({ length: maxDots }, (_, dotIndex) => {
+    const mappedIndex = maxDots === flowItems.length ? dotIndex : Math.round(dotIndex * (flowItems.length - 1) / (maxDots - 1));
+    return `<i class="${Math.abs(mappedIndex - flowIndex) <= Math.max(1, Math.ceil(flowItems.length / maxDots / 2)) ? "active" : ""}"></i>`;
+  }).join("");
+}
+
+function moveBookflow(direction) {
+  flowIndex = Math.max(0, Math.min(flowItems.length - 1, flowIndex + direction));
+  updateBookflow();
+}
+
+async function chooseActiveBook() {
+  const selected = flowItems[flowIndex];
+  if (!selected) return;
+  if (flowMode === "genres") await showPickStories(selected);
+  else await startStory(selected);
 }
 
 async function loadStoryQuestions(story) {
@@ -371,6 +437,13 @@ async function startStory(s, forceSetNum = null) {
 $("#pickGrid").addEventListener("click", async e => {
   const btn = e.target.closest("button[data-genre],button[data-story]");
   if (!btn) return;
+  const item = btn.closest(".bookflow-item");
+  const itemIndex = item ? Number(item.dataset.index) : -1;
+  if (itemIndex !== flowIndex) {
+    flowIndex = itemIndex;
+    updateBookflow();
+    return;
+  }
   if (btn.dataset.genre) {
     const selectedGenreMeta = DATA.genres.find(g => g.id === btn.dataset.genre);
     if (selectedGenreMeta) await showPickStories(selectedGenreMeta);
@@ -380,6 +453,39 @@ $("#pickGrid").addEventListener("click", async e => {
   }
 });
 $("#pickBack").addEventListener("click", showPickGenres);
+$("#flowPrev").addEventListener("click", () => moveBookflow(-1));
+$("#flowNext").addEventListener("click", () => moveBookflow(1));
+$("#flowChoose").addEventListener("click", chooseActiveBook);
+$("#bookflowViewport").addEventListener("keydown", event => {
+  if (event.key === "ArrowLeft") { event.preventDefault(); moveBookflow(-1); }
+  if (event.key === "ArrowRight") { event.preventDefault(); moveBookflow(1); }
+  if (event.key === "Enter" || event.key === " ") { event.preventDefault(); chooseActiveBook(); }
+});
+$("#bookflowViewport").addEventListener("wheel", event => {
+  if (wheelLock || Math.abs(event.deltaX) + Math.abs(event.deltaY) < 8) return;
+  event.preventDefault();
+  wheelLock = true;
+  moveBookflow((event.deltaX || event.deltaY) > 0 ? 1 : -1);
+  window.setTimeout(() => { wheelLock = false; }, 180);
+}, { passive: false });
+$("#bookflowViewport").addEventListener("pointerdown", event => {
+  dragStartX = event.clientX;
+  dragDeltaX = 0;
+  event.currentTarget.setPointerCapture(event.pointerId);
+  event.currentTarget.classList.add("is-dragging");
+});
+$("#bookflowViewport").addEventListener("pointermove", event => {
+  if (dragStartX === null) return;
+  dragDeltaX = event.clientX - dragStartX;
+});
+$("#bookflowViewport").addEventListener("pointerup", event => {
+  if (dragStartX === null) return;
+  event.currentTarget.classList.remove("is-dragging");
+  if (Math.abs(dragDeltaX) > 34) moveBookflow(dragDeltaX < 0 ? 1 : -1);
+  dragStartX = null;
+  dragDeltaX = 0;
+});
+window.addEventListener("resize", updateBookflow);
 
 /* ---------- Question Screen ---------- */
 function render() {
