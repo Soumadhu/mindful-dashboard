@@ -44,9 +44,20 @@
       <div id="userProgressSummary" class="user-prog-pill"></div>
     </div>
     <p class="muted small" id="pickHint">Each world tells a different story about how you feel today.</p>
-    <ul class="pick-grid" id="pickGrid"></ul>
-    <div class="q-actions">
+    <div class="bookflow-shell" id="bookflowShell">
+      <button type="button" class="bookflow-arrow bookflow-prev" id="flowPrev" aria-label="Previous choice">‹</button>
+      <div class="bookflow-viewport" id="bookflowViewport" tabindex="0" role="region" aria-label="Genre choices">
+        <ul class="bookflow-track" id="pickGrid"></ul>
+      </div>
+      <button type="button" class="bookflow-arrow bookflow-next" id="flowNext" aria-label="Next choice">›</button>
+    </div>
+    <div class="bookflow-footer">
+      <p class="bookflow-status" id="flowStatus" aria-live="polite"></p>
+      <div class="bookflow-dots" id="flowDots" aria-hidden="true"></div>
+    </div>
+    <div class="q-actions picker-actions">
       <button type="button" class="btn btn-ghost" id="pickBack" hidden>Back to genres</button>
+      <button type="button" class="btn btn-primary" id="flowChoose">Explore this genre</button>
     </div>
   </section>
 
